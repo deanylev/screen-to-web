@@ -1,50 +1,48 @@
-const childProcess = require('child_process');
 const net = require('net');
 
+const commandLineArgs = require('command-line-args');
 const express = require('express');
 const app = express();
 
-const httpPort = 8080;
-const tcpPort = 12802;
+// https://xkcd.com/221/
+const multipartBoundary = 'ffb88cad-a6a7-4546-8620-b1422d38919d';
 
-const multipartBoundary = '08360129-1EDF-4BEF-AD94-4EFD4F3EC793';
+const screenToTcp = require('./build/Release/screenToTcp');
 
-const server = net.createServer((socket) => {
-  socket.on('data', (data) => {
-    responses.forEach((res) => {
-      res.write(data);
+const options = commandLineArgs([
+  { name: 'width', type: Number, defaultValue: 1920 },
+  { name: 'height', type: Number, defaultValue: 1080 },
+  { name: 'framerate', type: Number, defaultValue: 30 },
+  { name: 'extend', type: Boolean, defaultValue: false },
+  { name: 'tcp-port', type: Number, defaultValue: 12802 },
+  { name: 'http-port', type: Number, defaultValue: 8080 }
+]);
+
+const promises = [];
+
+promises.push(new Promise((resolve, reject) => {
+  const tcpServer = net.createServer((socket) => {
+    console.log('tcp connection');
+    resolve();
+
+    socket.on('data', (data) => {
+      responses.forEach((res) => {
+        res.write(data);
+      });
+    });
+    socket.on('close', () => {
+      responses.forEach((res) => {
+        res.end();
+      });
     });
   });
-  socket.on('close', () => {
-    responses.forEach((res) => {
-      res.end();
+  tcpServer.listen(options['tcp-port'], () => {
+    console.log('tcp listening', {
+      port: tcpServer.address().port
     });
+    screenToTcp.start(options.width, options.height, options.framerate, options.extend, options['tcp-port'], multipartBoundary);
   });
-});
-server.listen(tcpPort, () => {
-  console.log('tcp listening', {
-    tcpPort
-  });
-  const gstreamer = childProcess.spawn('gst-launch-1.0', [
-    // video
-    'avfvideosrc', 'capture-screen=true', 'capture-screen-cursor=true', 'device-index=1', 'do-timestamp=true', '!',
-    'videorate', '!',
-    'video/x-raw,framerate=10/1', '!',
-    'videoscale', '!', 'video/x-raw,width=854,height=480', '!',
-    'jpegenc', 'quality=65','!',
-    'muxer.',
-    // mux and network
-    'multipartmux', `boundary=${multipartBoundary}`, 'name=muxer', '!',
-    'tcpclientsink', 'host=127.0.0.1', 'sync=false', `port=${tcpPort}`
-  ]);
-  gstreamer.stdout.on('data', (data) => {
-    console.log(data.toString());
-  });
-
-  gstreamer.stderr.on('data', (data) => {
-    console.warn(data.toString());
-  });
-});
+}));
 
 const responses = new Set();
 
@@ -60,11 +58,19 @@ app.get('/', (req, res) => {
 });
 
 app.get('/view', (req, res) => {
-  res.sendFile(`${__dirname}/view.html`);
+  res.sendFile(`${__dirname}/res/view.html`);
 });
 
-app.listen(httpPort, () => {
-  console.log('http listening', {
-    httpPort
+promises.push(new Promise((resolve, reject) => {
+  const httpServer = app.listen(options['http-port'], () => {
+    const { port } = httpServer.address();
+    console.log('http listening', {
+      port
+    });
+    resolve(port);
   });
+}));
+
+Promise.all(promises).then((values) => {
+  console.log(`\n✅ ready to rock! Head to http://localhost:${values[1]}/view to get started.`)
 });

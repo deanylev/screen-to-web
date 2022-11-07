@@ -1,0 +1,2 @@
+int createVirtualDisplay();
+void destroyVirtualDisplay();
