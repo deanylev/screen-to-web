@@ -2,7 +2,10 @@ const net = require('net');
 
 const commandLineArgs = require('command-line-args');
 const express = require('express');
+const robot = require('robotjs');
+
 const app = express();
+app.use(express.json());
 
 // https://xkcd.com/221/
 const multipartBoundary = 'ffb88cad-a6a7-4546-8620-b1422d38919d';
@@ -14,6 +17,7 @@ const options = commandLineArgs([
   { name: 'height', type: Number, defaultValue: 1080 },
   { name: 'framerate', type: Number, defaultValue: 30 },
   { name: 'extend', type: Boolean, defaultValue: false },
+  { name: 'allow-input', type: Boolean, defaultValue: false },
   { name: 'tcp-port', type: Number, defaultValue: 12802 },
   { name: 'http-port', type: Number, defaultValue: 8080 }
 ]);
@@ -40,7 +44,49 @@ promises.push(new Promise((resolve, reject) => {
     console.log('tcp listening', {
       port: tcpServer.address().port
     });
-    screenToTcp.start(options.width, options.height, options.framerate, options.extend, options['tcp-port'], multipartBoundary);
+
+    const { screenWidth, screenHeight, screenX, screenY, width, height } = screenToTcp.start(options.width, options.height, options.framerate, options.extend, options['tcp-port'], multipartBoundary);
+    const scaleCoordinates = (x, y) => {
+      return {
+        x: x / width * screenWidth + screenX,
+        y: y / height * screenHeight + screenY
+      };
+    };
+
+    if (options['allow-input']) {
+      app.post('/move', (req, res) => {
+        const { x, y, down } = req.body;
+        if (typeof x !== 'number' || typeof y !== 'number' || typeof down !== 'boolean') {
+          res.sendStatus(400);
+          return;
+        }
+
+        const scaled = scaleCoordinates(x, y);
+
+        if (down) {
+          robot.dragMouse(scaled.x, scaled.y);
+        } else {
+          robot.moveMouse(scaled.x, scaled.y);
+        }
+        res.sendStatus(204);
+      });
+
+      app.post('/click', (req, res) => {
+        const { x, y, down, right } = req.body;
+        if (typeof down !== 'boolean' || typeof right !== 'boolean') {
+          res.sendStatus(400);
+          return;
+        }
+
+        if (typeof x === 'number' && typeof y === 'number') {
+          const scaled = scaleCoordinates(x, y);
+          robot.moveMouse(scaled.x, scaled.y);
+        }
+
+        robot.mouseToggle(down ? 'down' : 'up', right ? 'right' : 'left');
+        res.sendStatus(204);
+      });
+    }
   });
 }));
 

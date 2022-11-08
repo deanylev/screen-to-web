@@ -14,6 +14,7 @@
       background: black;
       height: 100%;
       margin: 0;
+      overflow: hidden;
     }
 
     img {
@@ -24,6 +25,118 @@
   </style>
 </head>
 <body>
-  <img src="/">
+  <img draggable="false" src="/">
+  <script>
+    const image = document.querySelector('img');
+    const getImageRealCoordinates = (event) => {
+      // based on https://stackoverflow.com/a/65831336
+
+      const matrix = new DOMMatrix();
+
+      // centre
+      const elementCenter = new DOMPoint(image.clientWidth / 2, image.clientHeight / 2);
+      const imageCenter = new DOMPoint(image.naturalWidth / 2, image.naturalHeight / 2);
+      matrix.translateSelf(elementCenter.x - imageCenter.x, elementCenter.y - imageCenter.y);
+
+      // zoom
+      const zoom = Math.min(image.clientWidth / image.naturalWidth, image.clientHeight / image.naturalHeight);
+      matrix.scaleSelf(zoom, zoom, 1, imageCenter.x, imageCenter.y);
+
+      const point = new DOMPoint(event.clientX, event.clientY);
+      const transformedPoint = matrix.inverse().transformPoint(point);
+      return transformedPoint;
+    };
+
+    let inputQueue = Promise.resolve();
+    const sendInputEvent = (endpoint, event, extraData = {}) => {
+      const coordinates = event ? getImageRealCoordinates(event) : null;
+      if (coordinates && (coordinates.x < 0 || coordinates.x > image.naturalWidth || coordinates.y < 0 || coordinates.y > image.naturalHeight)) {
+        // ignore input in the black bars of the image
+        return;
+      }
+
+      inputQueue = inputQueue.then(() => {
+        return fetch(`/${endpoint}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            ...coordinates && {
+              x: coordinates.x,
+              y: coordinates.y
+            },
+            ...extraData
+          })
+        });
+      });
+    };
+
+    let moveThrottled = false;
+
+    image.addEventListener('mousemove', (event) => {
+      const down = event.buttons === 1;
+      if (!event.shiftKey && !down || moveThrottled) {
+        return;
+      }
+
+      moveThrottled = true;
+      setTimeout(() => {
+        moveThrottled = false;
+      }, 30);
+
+      sendInputEvent('move', event, {
+        down
+      });
+    });
+
+    image.addEventListener('touchmove', (event) => {
+      if (moveThrottled) {
+        return;
+      }
+
+      moveThrottled = true;
+      setTimeout(() => {
+        moveThrottled = false;
+      }, 30);
+
+      sendInputEvent('move', event.targetTouches[0], {
+        down: true
+      });
+    });
+
+    image.addEventListener('mousedown', (event) => {
+      sendInputEvent('click', event, {
+        down: true,
+        right: event.button === 2
+      });
+    });
+
+    image.addEventListener('mouseup', (event) => {
+      sendInputEvent('click', event, {
+        down: false,
+        right: event.button === 2
+      });
+    });
+
+    image.addEventListener('touchstart', (event) => {
+      sendInputEvent('click', event.targetTouches[0], {
+        down: true,
+        right: false
+      });
+    });
+
+    image.addEventListener('touchend', (event) => {
+      sendInputEvent('click', event.targetTouches[0], {
+        down: false,
+        right: false
+      });
+    });
+
+    // weirdly, addEventListener doesn't seem to work here
+    document.oncontextmenu = (event) => {
+      event.preventDefault();
+    };
+  </script>
 </body>
 </html>

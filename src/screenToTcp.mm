@@ -93,12 +93,20 @@ Destination calculateDestination(gint displayId, guint targetWidth, guint target
   return destination;
 }
 
-void start(const Napi::CallbackInfo& info) {
+Napi::Value start(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
+
+  Napi::Object ret = Napi::Object::New(env);
+  ret["width"] = 0;
+  ret["height"] = 0;
+  ret["screenWidth"] = 0;
+  ret["screenHeight"] = 0;
+  ret["screenX"] = 0;
+  ret["screenY"] = 0;
 
   if (info.Length() < 6 || !info[0].IsNumber() || !info[1].IsNumber() || !info[2].IsNumber() || !info[3].IsBoolean() || !info[4].IsNumber() || !info[5].IsString()) {
     Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
-    return;
+    return ret;
   }
 
   const guint width = info[0].As<Napi::Number>().Uint32Value();
@@ -117,10 +125,10 @@ void start(const Napi::CallbackInfo& info) {
   }
 
   auto destination = calculateDestination(displayId, width, height);
-  std::cout << "displayId: " << displayId << std::endl;
-  std::cout << "destination.index: " << destination.index << std::endl;
-  std::cout << "destination.width: " << destination.width << std::endl;
-  std::cout << "destination.height: " << destination.height << std::endl;
+  std::cout << "display id: " << displayId << std::endl;
+  std::cout << "display index: " << destination.index << std::endl;
+  std::cout << "width: " << destination.width << std::endl;
+  std::cout << "height: " << destination.height << std::endl;
 
   if (vpipeline != nullptr) {
     gst_element_set_state(vpipeline, GST_STATE_NULL);
@@ -201,6 +209,17 @@ void start(const Napi::CallbackInfo& info) {
       nullptr);
 
   gst_element_set_state(vpipeline, GST_STATE_PLAYING);
+
+  ret["width"] = destination.width;
+  ret["height"] = destination.height;
+
+  CGRect screenBounds = CGDisplayBounds(displayId);
+  ret["screenWidth"] = screenBounds.size.width;
+  ret["screenHeight"] = screenBounds.size.height;
+  ret["screenX"] = screenBounds.origin.x;
+  ret["screenY"] = screenBounds.origin.y;
+
+  return ret;
 }
 
 Napi::Object init(Napi::Env env, Napi::Object exports) {
