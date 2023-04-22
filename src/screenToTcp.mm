@@ -9,6 +9,16 @@
 
 #include "virtualDisplay.h"
 
+extern "C" {
+  GST_PLUGIN_STATIC_DECLARE(applemedia);
+  GST_PLUGIN_STATIC_DECLARE(coreelements);
+  GST_PLUGIN_STATIC_DECLARE(jpeg);
+  GST_PLUGIN_STATIC_DECLARE(multipart);
+  GST_PLUGIN_STATIC_DECLARE(videoscale);
+  GST_PLUGIN_STATIC_DECLARE(videorate);
+  GST_PLUGIN_STATIC_DECLARE(tcp);
+}
+
 GstElement *vpipeline = nullptr;
 GstElement *vsrc = nullptr;
 GstElement *vrate = nullptr;
@@ -216,6 +226,14 @@ Napi::Object init(Napi::Env env, Napi::Object exports) {
   if (!gst_is_initialized()) {
     gst_init(nullptr, nullptr);
   }
+
+  GST_PLUGIN_STATIC_REGISTER(applemedia);
+  GST_PLUGIN_STATIC_REGISTER(coreelements);
+  GST_PLUGIN_STATIC_REGISTER(jpeg);
+  GST_PLUGIN_STATIC_REGISTER(multipart);
+  GST_PLUGIN_STATIC_REGISTER(tcp);
+  GST_PLUGIN_STATIC_REGISTER(videoscale);
+  GST_PLUGIN_STATIC_REGISTER(videorate);
 
   exports["start"] = Napi::Function::New(env, start);
 
