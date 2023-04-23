@@ -16,6 +16,7 @@ const options = commandLineArgs([
   { name: 'width', type: Number, defaultValue: 1920 },
   { name: 'height', type: Number, defaultValue: 1080 },
   { name: 'framerate', type: Number, defaultValue: 30 },
+  { name: 'quality', type: Number, defaultValue: 65 },
   { name: 'extend', type: Boolean, defaultValue: false },
   { name: 'allow-input', type: Boolean, defaultValue: false },
   { name: 'tcp-port', type: Number, defaultValue: 12802 },
@@ -45,7 +46,7 @@ promises.push(new Promise((resolve, reject) => {
       port: tcpServer.address().port
     });
 
-    const { screenWidth, screenHeight, screenX, screenY, width, height } = screenToTcp.start(options.width, options.height, options.framerate, options.extend, options['tcp-port'], multipartBoundary);
+    const { screenWidth, screenHeight, screenX, screenY, width, height } = screenToTcp.start(options.width, options.height, options.framerate, options.quality, options.extend, options['tcp-port'], multipartBoundary);
     const scaleCoordinates = (x, y) => {
       return {
         x: x / width * screenWidth + screenX,
