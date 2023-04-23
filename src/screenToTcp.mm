@@ -36,11 +36,11 @@ struct Destination {
 };
 
 // scale our target resolution against our physical aspect ratio
-Destination calculateDestination(gint displayId, guint targetWidth, guint targetHeight) {
+Destination calculateDestination(gint displayId, gdouble targetWidth, gdouble targetHeight) {
   Destination defaultDestination = {
     .index = -1,
-    .width = targetWidth,
-    .height = targetHeight
+    .width = static_cast<guint>(targetWidth),
+    .height = static_cast<guint>(targetHeight)
   };
   gint index = -1;
   double calculatedWidth;
@@ -98,6 +98,10 @@ Destination calculateDestination(gint displayId, guint targetWidth, guint target
     }
   }
 
+  if (calculatedRatio != targetRatio) {
+    std::cout << "WARNING: target aspect ratio and actual aspect ratio are different, actual will be used" << std::endl;
+  }
+
   const Destination destination = {
     .index = index,
     .width = static_cast<guint>(calculatedWidth) / 2 * 2,
@@ -122,8 +126,8 @@ Napi::Value start(const Napi::CallbackInfo& info) {
     return ret;
   }
 
-  const guint width = info[0].As<Napi::Number>().Uint32Value();
-  const guint height = info[1].As<Napi::Number>().Uint32Value();
+  const gdouble width = info[0].As<Napi::Number>().DoubleValue();
+  const gdouble height = info[1].As<Napi::Number>().DoubleValue();
   const guint framerate = info[2].As<Napi::Number>().Uint32Value();
   const bool extend = info[3].As<Napi::Boolean>().Value();
   const guint port = info[4].As<Napi::Number>().Uint32Value();
