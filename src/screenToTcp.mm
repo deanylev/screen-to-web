@@ -53,17 +53,30 @@ Destination calculateDestination(gint displayId, guint targetWidth, guint target
     const CGDirectDisplayID deviceId = [[description objectForKey:@"NSScreenNumber"] unsignedIntegerValue];
 
     if (static_cast<gint>(deviceId) == displayId) {
-      const CGDisplayModeRef displayMode = CGDisplayCopyDisplayMode(deviceId);
-      if (displayMode == nullptr) {
-        std::cerr << "null displayMode, using default destination" << std::endl;
+      CFStringRef keys[1] = { kCGDisplayShowDuplicateLowResolutionModes };
+      CFBooleanRef values[1] = { kCFBooleanTrue };
+      CFDictionaryRef options = CFDictionaryCreate(kCFAllocatorDefault, (const void**) keys, (const void**) values, 1, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+      CFArrayRef modes = CGDisplayCopyAllDisplayModes(displayId, options);
+
+      // https://stackoverflow.com/a/46078384
+      CGDisplayModeRef biggestMode = nil;
+      for (NSUInteger i = 0; i < (NSUInteger) CFArrayGetCount(modes); i++) {
+        auto mode = (CGDisplayModeRef) CFArrayGetValueAtIndex(modes, i);
+        if (CGDisplayModeGetPixelWidth(mode) == CGDisplayModeGetWidth(mode) && (!biggestMode || CGDisplayModeGetPixelWidth(mode) > CGDisplayModeGetPixelWidth(biggestMode))) {
+          biggestMode = mode;
+        }
+      }
+
+      if (!biggestMode) {
+        std::cerr << "null display mode, using default destination" << std::endl;
         return defaultDestination;
       }
 
       index = static_cast<gint>(i);
-      calculatedWidth = static_cast<double>(CGDisplayModeGetPixelWidth(displayMode));
-      calculatedHeight = static_cast<double>(CGDisplayModeGetPixelHeight(displayMode));
+      calculatedWidth = static_cast<double>(CGDisplayModeGetPixelWidth(biggestMode));
+      calculatedHeight = static_cast<double>(CGDisplayModeGetPixelHeight(biggestMode));
 
-      CGDisplayModeRelease(displayMode);
+      CFRelease(modes);
     }
   }
 
