@@ -50,7 +50,7 @@
     let inputQueue = Promise.resolve();
     const sendInputEvent = (endpoint, event, extraData = {}) => {
       const coordinates = event ? getImageRealCoordinates(event) : null;
-      if (coordinates && (coordinates.x < 0 || coordinates.x > image.naturalWidth || coordinates.y < 0 || coordinates.y > image.naturalHeight)) {
+      if (!coordinates || coordinates.x < 0 || coordinates.x > image.naturalWidth || coordinates.y < 0 || coordinates.y > image.naturalHeight) {
         // ignore input in the black bars of the image
         return;
       }

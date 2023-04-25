@@ -14,9 +14,9 @@ extern "C" {
   GST_PLUGIN_STATIC_DECLARE(coreelements);
   GST_PLUGIN_STATIC_DECLARE(jpeg);
   GST_PLUGIN_STATIC_DECLARE(multipart);
+  GST_PLUGIN_STATIC_DECLARE(tcp);
   GST_PLUGIN_STATIC_DECLARE(videoscale);
   GST_PLUGIN_STATIC_DECLARE(videorate);
-  GST_PLUGIN_STATIC_DECLARE(tcp);
 }
 
 GstElement *vpipeline = nullptr;
