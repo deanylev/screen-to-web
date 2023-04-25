@@ -10,7 +10,7 @@ Clone the repo and run `yarn` to install dependencies. Run `yarn configure` and 
 ## Usage
 
 ```
-yarn start --width 1920 --height 1080 --framerate 30 --quality 65 --extend --allow-input --tcp-port 12802 --http-port 8080
+yarn start --width 1920 --height 1080 --framerate 30 --quality 65 --extend --extend-width 1920 --extend-height 1080 --allow-input --tcp-port 12802 --http-port 8080
 ```
 
 Passing options is optional. If not passed, they will default to the values specified above (other than `extend` and `allow-input` which are `false` by default).

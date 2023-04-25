@@ -121,7 +121,7 @@ Napi::Value start(const Napi::CallbackInfo& info) {
   ret["screenX"] = 0;
   ret["screenY"] = 0;
 
-  if (info.Length() < 6 || !info[0].IsNumber() || !info[1].IsNumber() || !info[2].IsNumber() || !info[3].IsNumber() || !info[4].IsBoolean() || !info[5].IsNumber() || !info[6].IsString()) {
+  if (info.Length() < 6 || !info[0].IsNumber() || !info[1].IsNumber() || !info[2].IsNumber() || !info[3].IsNumber() || !info[4].IsBoolean() || !info[5].IsNumber() || !info[6].IsNumber() || !info[7].IsNumber() || !info[8].IsString()) {
     Napi::TypeError::New(env, "Wrong arguments").ThrowAsJavaScriptException();
     return ret;
   }
@@ -131,12 +131,14 @@ Napi::Value start(const Napi::CallbackInfo& info) {
   const guint framerate = info[2].As<Napi::Number>().Uint32Value();
   const guint quality = info[3].As<Napi::Number>().Uint32Value();
   const bool extend = info[4].As<Napi::Boolean>().Value();
-  const guint port = info[5].As<Napi::Number>().Uint32Value();
-  const std::string multipartBoundary(info[6].As<Napi::String>());
+  const double extendWidth = info[5].As<Napi::Number>().DoubleValue();
+  const double extendHeight = info[6].As<Napi::Number>().DoubleValue();
+  const guint port = info[7].As<Napi::Number>().Uint32Value();
+  const std::string multipartBoundary(info[8].As<Napi::String>());
 
   gint displayId = CGMainDisplayID();
   if (extend) {
-    gint virtualDisplayId = createVirtualDisplay();
+    gint virtualDisplayId = createVirtualDisplay(extendWidth, extendHeight);
     if (virtualDisplayId != -1) {
       displayId = virtualDisplayId;
     }

@@ -1,2 +1,2 @@
-int createVirtualDisplay();
+int createVirtualDisplay(double width, double height);
 void destroyVirtualDisplay();
