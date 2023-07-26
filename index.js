@@ -1,4 +1,5 @@
 const net = require('net');
+const os = require('os');
 
 const commandLineArgs = require('command-line-args');
 const express = require('express');
@@ -121,5 +122,13 @@ promises.push(new Promise((resolve, reject) => {
 }));
 
 Promise.all(promises).then((values) => {
-  console.log(`\n✅ ready to rock! Head to http://localhost:${values[1]}/view to get started.`)
+  const port = values[1];
+  const networkInterfaces = os.networkInterfaces();
+  const ips = Object.values(networkInterfaces)
+    .flat()
+    .filter(({ family, internal }) => !internal && family === 'IPv4')
+    .map(({ address }) => address);
+
+  const urls = ['localhost', ...ips].map((ip) => `http://${ip}:${port}/view`);
+  console.log(`\n✅ ready to rock! Get started at:\n\n${urls.join('\n')}`);
 });
