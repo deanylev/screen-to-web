@@ -97,6 +97,11 @@ promises.push(new Promise((resolve, reject) => {
 const responses = new Set();
 
 app.get('/', (req, res) => {
+  if (req.query.no_redirect !== 'true') {
+    res.redirect('/view');
+    return;
+  }
+
   res.set({
     'Cache-Control': 'max-age=0, no-cache, must-revalidate',
     'Content-Type': `multipart/x-mixed-replace; boundary=${multipartBoundary}`
