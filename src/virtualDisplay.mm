@@ -38,8 +38,8 @@ int createVirtualDisplay(double width, double height) {
   descriptor.maxPixelsHigh = height;
   descriptor.sizeInMillimeters = CGSizeMake(25.4 * width / 102, 25.4 * height / 102);
   descriptor.serialNum = 0;
-  descriptor.productID = 0;
-  descriptor.vendorID = 0;
+  descriptor.productID = 0x010F2C;
+  descriptor.vendorID = 0x010F2C;
 
   CGVirtualDisplay *display = [[CGVirtualDisplay alloc] initWithDescriptor:descriptor];
   CGVirtualDisplayMode *mode = [[CGVirtualDisplayMode alloc] initWithWidth:width height:height refreshRate:60];
